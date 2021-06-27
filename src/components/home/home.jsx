@@ -1,11 +1,7 @@
-import React, { Component} from 'react'
-import ReactDOM from "react-dom"
-
-import { Link } from "react-router-dom"
+import React, { Component } from 'react'
 import "./style.scss"
-
-import { render } from "react-dom";
 import AceEditor from "react-ace";
+import { Button, Switch } from 'antd';
 
 import "ace-builds/src-noconflict/mode-java";
 import "ace-builds/src-noconflict/theme-github";
@@ -35,6 +31,7 @@ export default class home extends Component {
             </body>
             </html>
         `,
+        dark_mode:true
     }
 
 
@@ -66,12 +63,43 @@ export default class home extends Component {
             }
         }
 
+        this.setState({ initial_web_code: new_val })
+
+    }
+
+    saveDownloadedData = (fileName, data) => {
+        if (~navigator.userAgent.indexOf("MSIE") || ~navigator.appVersion.indexOf("Trident/")) {
+            /* IE9-11 */
+            const blob = new Blob([data], { type: "text/csv;charset=utf-8;" })
+            navigator.msSaveBlob(blob, fileName)
+        } else {
+            const link = document.createElement("a")
+
+            link.setAttribute("target", "_blank")
+            if (Blob !== undefined) {
+                const blob = new Blob([data], { type: "text/plain" })
+                link.setAttribute("href", URL.createObjectURL(blob))
+            } else {
+                link.setAttribute("href", "data:text/plain," + encodeURIComponent(data))
+            }
+
+            ~window.navigator.userAgent.indexOf("Edge") && (fileName = fileName.replace(/[&\/\\#,+$~%.'':*?<>{}]/g, "_")) /* Edge */
+
+            link.setAttribute("download", fileName)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        }
     }
 
 
     render() {
         return (
             <div className="home">
+
+                <div className="cus_switch">
+                    <Switch className="dark_mode" checkedChildren="Dark mode" unCheckedChildren="Light mode" defaultChecked={this.state.dark_mode} onChange={(e) => this.setState({ dark_mode: e })} />
+                </div>
 
                 <div className="row">
                     <div className="col-lg-12 col-xl-6">
@@ -80,7 +108,7 @@ export default class home extends Component {
                             <AceEditor
                                 placeholder="Placeholder Text"
                                 mode="javascript"
-                                theme="monokai"
+                                theme={this.state.dark_mode?"monokai":"github"}
                                 name="web_editor"
                                 onLoad={this.onLoad}
                                 onChange={this.onChange}
@@ -109,11 +137,10 @@ export default class home extends Component {
                         </iframe>
                     </div>
 
-                 
+
                 </div>
 
-
-                <div class="eval_class" style={{display:"none"}}></div>
+                <Button type="primary" className="doc_save_btn" onClick={e => this.saveDownloadedData("download.txt", this.state.initial_web_code)}>Download code</Button>
 
             </div>
         )
